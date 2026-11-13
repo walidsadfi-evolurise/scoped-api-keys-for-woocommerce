@@ -1,0 +1,32 @@
+{
+    "name": "walidsadfi-evolurise/scoped-api-keys-for-woocommerce",
+    "description": "Scopes, IP allowlists, expiry, rate limits and a usage log for WooCommerce REST API keys.",
+    "type": "wordpress-plugin",
+    "license": "GPL-2.0-or-later",
+    "authors": [
+        {
+            "name": "Walid Sadfi",
+            "email": "walid.sadfi@evolurise.com"
+        }
+    ],
+    "require": {
+        "php": ">=7.4"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^9.6",
+        "wp-coding-standards/wpcs": "^3.1",
+        "phpcompatibility/phpcompatibility-wp": "^2.1",
+        "dealerdirect/phpcodesniffer-composer-installer": "^1.0",
+        "yoast/phpunit-polyfills": "^2.0"
+    },
+    "scripts": {
+        "test": "phpunit",
+        "lint": "phpcs",
+        "lint:fix": "phpcbf"
+    },
+    "config": {
+        "allow-plugins": {
+            "dealerdirect/phpcodesniffer-composer-installer": true
+        }
+    }
+}
