@@ -1,0 +1,85 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  unit:
+    name: Unit (PHP ${{ matrix.php }})
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        php: ["7.4", "8.1", "8.3"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php }}
+          tools: composer:v2
+          coverage: none
+      - run: composer install --no-interaction --no-progress
+      - name: Syntax check
+        run: find . -name '*.php' -not -path './vendor/*' -print0 | xargs -0 -n1 php -l
+      - name: Unit tests
+        run: vendor/bin/phpunit -c phpunit.xml.dist
+
+  lint:
+    name: WordPress coding standards
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.2"
+          tools: composer:v2
+          coverage: none
+      - run: composer install --no-interaction --no-progress
+      - run: vendor/bin/phpcs --report=summary
+
+  integration:
+    name: Integration (WP ${{ matrix.wp }}, WC ${{ matrix.wc }}, PHP ${{ matrix.php }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { php: "8.2", wp: "latest", wc: "latest" }
+          - { php: "8.1", wp: "6.6", wc: "9.3.3" }
+    services:
+      mysql:
+        image: mariadb:10.11
+        env:
+          MARIADB_ROOT_PASSWORD: root
+          MARIADB_DATABASE: wp_test
+        ports: ["3306:3306"]
+        options: --health-cmd="healthcheck.sh --connect --innodb_initialized" --health-interval=10s --health-timeout=5s --health-retries=10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php }}
+          tools: composer:v2
+          extensions: mysqli
+          coverage: none
+      - run: composer install --no-interaction --no-progress
+      - name: Install WordPress test suite
+        run: bash bin/install-wp-tests.sh wp_test root root 127.0.0.1 ${{ matrix.wp }} true
+      - name: Install WooCommerce
+        run: |
+          set -e
+          if [ "${{ matrix.wc }}" = "latest" ]; then
+            URL="https://downloads.wordpress.org/plugin/woocommerce.latest-stable.zip"
+          else
+            URL="https://downloads.wordpress.org/plugin/woocommerce.${{ matrix.wc }}.zip"
+          fi
+          mkdir -p /tmp/wordpress/wp-content/plugins
+          curl -sSL "$URL" -o /tmp/wc.zip
+          unzip -q /tmp/wc.zip -d /tmp/wordpress/wp-content/plugins
+          echo "WC_PLUGIN_FILE=/tmp/wordpress/wp-content/plugins/woocommerce/woocommerce.php" >> "$GITHUB_ENV"
+      - name: Integration tests
+        env:
+          WP_TESTS_DIR: /tmp/wordpress-tests-lib
+          WP_TESTS_PHPUNIT_POLYFILLS_PATH: ${{ github.workspace }}/vendor/yoast/phpunit-polyfills
+        run: vendor/bin/phpunit -c phpunit-integration.xml.dist
