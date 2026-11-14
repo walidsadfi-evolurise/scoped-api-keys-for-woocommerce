@@ -24,4 +24,9 @@
             <property name="prefixes" type="array"><element value="wcsak"/><element value="WCSAK"/></property>
         </properties>
     </rule>
+    <rule ref="WordPress.WP.Capabilities">
+        <properties>
+            <property name="custom_capabilities" type="array"><element value="manage_woocommerce"/></property>
+        </properties>
+    </rule>
 </ruleset>

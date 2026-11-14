@@ -45,22 +45,22 @@ class WCSAK_Scope {
 	 * @var array
 	 */
 	private static $aliases = array(
-		'orders'              => 'orders',
-		'refunds'             => 'orders',
-		'products'            => 'products',
-		'product_variations'  => 'products',
-		'variations'          => 'products',
-		'customers'           => 'customers',
-		'coupons'             => 'coupons',
-		'reports'             => 'reports',
-		'settings'            => 'settings',
-		'shipping'            => 'shipping',
-		'shipping_methods'    => 'shipping',
-		'taxes'               => 'taxes',
-		'payment_gateways'    => 'payment_gateways',
-		'webhooks'            => 'webhooks',
-		'system_status'       => 'system_status',
-		'data'                => 'data',
+		'orders'             => 'orders',
+		'refunds'            => 'orders',
+		'products'           => 'products',
+		'product_variations' => 'products',
+		'variations'         => 'products',
+		'customers'          => 'customers',
+		'coupons'            => 'coupons',
+		'reports'            => 'reports',
+		'settings'           => 'settings',
+		'shipping'           => 'shipping',
+		'shipping_methods'   => 'shipping',
+		'taxes'              => 'taxes',
+		'payment_gateways'   => 'payment_gateways',
+		'webhooks'           => 'webhooks',
+		'system_status'      => 'system_status',
+		'data'               => 'data',
 	);
 
 	/**
@@ -130,16 +130,16 @@ class WCSAK_Scope {
 	 * Does the scope list allow (resource, action)?
 	 *
 	 * @param string[] $scopes   Normalised scopes.
-	 * @param string   $resource Resource bucket.
+	 * @param string   $bucket   Resource bucket.
 	 * @param string   $action   read|write.
 	 * @return bool
 	 */
-	public static function allows( array $scopes, $resource, $action ) {
-		$resource = (string) $resource;
-		$action   = 'write' === $action ? 'write' : 'read';
+	public static function allows( array $scopes, $bucket, $action ) {
+		$bucket = (string) $bucket;
+		$action = 'write' === $action ? 'write' : 'read';
 		foreach ( $scopes as $s ) {
 			list( $r, $a ) = explode( ':', $s, 2 );
-			if ( '*' !== $r && $r !== $resource ) {
+			if ( '*' !== $r && $r !== $bucket ) {
 				continue;
 			}
 			if ( 'write' === $a || $a === $action ) {

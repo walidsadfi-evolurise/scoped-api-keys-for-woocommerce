@@ -18,6 +18,11 @@ if ( ! file_exists( $wcsak_tests_dir . '/includes/functions.php' ) ) {
 
 require_once $wcsak_tests_dir . '/includes/functions.php';
 
+// Let the WP bootstrap find the Polyfills when they are not on the Composer autoloader.
+if ( ! defined( 'WP_TESTS_PHPUNIT_POLYFILLS_PATH' ) && getenv( 'WP_TESTS_PHPUNIT_POLYFILLS_PATH' ) ) {
+	define( 'WP_TESTS_PHPUNIT_POLYFILLS_PATH', getenv( 'WP_TESTS_PHPUNIT_POLYFILLS_PATH' ) );
+}
+
 tests_add_filter(
 	'muplugins_loaded',
 	function () {

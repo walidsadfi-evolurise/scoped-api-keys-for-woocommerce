@@ -73,11 +73,11 @@ class WCSAK_Admin {
 			return;
 		}
 		// phpcs:enable
-		$keys    = WCSAK_Store::keys_with_policies();
+		$keys     = WCSAK_Store::keys_with_policies();
 		$unscoped = 0;
 		foreach ( $keys as $k ) {
 			if ( null === $k->scopes ) {
-				$unscoped++;
+				++$unscoped;
 			}
 		}
 		if ( ! $unscoped ) {

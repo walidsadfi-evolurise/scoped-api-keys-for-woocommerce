@@ -15,8 +15,8 @@ if ( ! $wcsak_key ) {
 }
 $wcsak_policy = WCSAK_Store::get_policy( $wcsak_key_id );
 $wcsak_scopes = $wcsak_policy ? WCSAK_Scope::normalize( (string) $wcsak_policy->scopes ) : array();
-$wcsak_has    = function ( $resource, $action ) use ( $wcsak_scopes ) {
-	return in_array( $resource . ':' . $action, $wcsak_scopes, true );
+$wcsak_has    = function ( $bucket, $action ) use ( $wcsak_scopes ) {
+	return in_array( $bucket . ':' . $action, $wcsak_scopes, true );
 };
 ?>
 <h2><?php echo esc_html( $wcsak_key->description ); ?> <code><?php echo esc_html( $wcsak_key->truncated_key ); ?></code></h2>

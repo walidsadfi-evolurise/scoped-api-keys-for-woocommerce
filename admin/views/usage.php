@@ -12,14 +12,14 @@ $wcsak_key_id  = isset( $_GET['key_id'] ) ? (int) $_GET['key_id'] : 0;
 $wcsak_outcome = isset( $_GET['outcome'] ) ? sanitize_key( wp_unslash( $_GET['outcome'] ) ) : '';
 $wcsak_page    = isset( $_GET['paged'] ) ? max( 1, (int) $_GET['paged'] ) : 1;
 // phpcs:enable
-$wcsak_res  = WCSAK_Store::usage(
+$wcsak_res   = WCSAK_Store::usage(
 	array(
 		'key_id'   => $wcsak_key_id,
 		'per_page' => 50,
 		'page'     => $wcsak_page,
 	)
 );
-$wcsak_keys = WCSAK_Store::keys_with_policies();
+$wcsak_keys  = WCSAK_Store::keys_with_policies();
 $wcsak_names = array();
 foreach ( $wcsak_keys as $wcsak_k ) {
 	$wcsak_names[ (int) $wcsak_k->key_id ] = $wcsak_k->description;
@@ -68,7 +68,22 @@ $wcsak_pages = (int) ceil( $wcsak_res['total'] / 50 );
 if ( $wcsak_pages > 1 ) {
 	echo '<p>';
 	for ( $wcsak_i = 1; $wcsak_i <= $wcsak_pages; $wcsak_i++ ) {
-		printf( '<a class="button %s" href="%s">%d</a> ', $wcsak_i === $wcsak_page ? 'button-primary' : '', esc_url( add_query_arg( array( 'page' => 'wcsak', 'tab' => 'usage', 'key_id' => $wcsak_key_id, 'paged' => $wcsak_i ), admin_url( 'admin.php' ) ) ), (int) $wcsak_i );
+		printf(
+			'<a class="button %s" href="%s">%d</a> ',
+			$wcsak_i === $wcsak_page ? 'button-primary' : '',
+			esc_url(
+				add_query_arg(
+					array(
+						'page'   => 'wcsak',
+						'tab'    => 'usage',
+						'key_id' => $wcsak_key_id,
+						'paged'  => $wcsak_i,
+					),
+					admin_url( 'admin.php' )
+				)
+			),
+			(int) $wcsak_i
+		);
 	}
 	echo '</p>';
 }

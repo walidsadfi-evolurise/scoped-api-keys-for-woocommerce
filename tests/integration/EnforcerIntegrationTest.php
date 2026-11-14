@@ -95,7 +95,8 @@ class EnforcerIntegrationTest extends WP_UnitTestCase {
 		$server   = rest_get_server();
 		$request  = new WP_REST_Request( $method, $route );
 		$response = $server->dispatch( $request );
-		return $response;
+		// WP_REST_Server::serve_request() applies this after dispatch(); it is where usage is logged.
+		return apply_filters( 'rest_post_dispatch', rest_ensure_response( $response ), $server, $request );
 	}
 
 	/**
@@ -164,6 +165,27 @@ class EnforcerIntegrationTest extends WP_UnitTestCase {
 		$this->assertSame( 200, $this->call( 'GET', '/wc/v3/products' )->get_status() );
 		$usage = WCSAK_Store::usage( array( 'key_id' => $this->key_id ) );
 		$this->assertSame( 'would_block:scope', $usage['items'][0]->outcome );
+	}
+
+	/**
+	 * Internal rest_do_request() calls made by server-side code are not the client's requests: not blocked, not counted.
+	 */
+	public function test_internal_subrequests_are_not_policed() {
+		WCSAK_Store::save_policy( $this->key_id, array( 'enabled' => 1, 'scopes' => 'orders:read', 'ip_allowlist' => '', 'expires_at' => null, 'rate_limit' => 0, 'log_usage' => 1, 'note' => '' ) );
+		// The client asked for orders; while handling it, server code fetches products internally.
+		wp_set_current_user( 0 );
+		$GLOBALS['current_user']   = null; // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited
+		$_SERVER['REQUEST_URI']    = '/wp-json/wc/v3/orders';
+		$_SERVER['REQUEST_METHOD'] = 'GET';
+		wp_set_current_user( (int) apply_filters( 'determine_current_user', false ) );
+		$internal = rest_do_request( new WP_REST_Request( 'GET', '/wc/v3/products' ) );
+		$this->assertSame( 200, $internal->get_status(), 'internal sub-request passes' );
+		$this->assertSame( 0, (int) WCSAK_Store::get_policy( $this->key_id )->blocked_count );
+		$this->assertSame( 0, WCSAK_Store::usage( array( 'key_id' => $this->key_id ) )['total'] );
+
+		// The same route requested by the client is blocked.
+		$this->assertSame( 403, $this->call( 'GET', '/wc/v3/products' )->get_status() );
+		$this->assertSame( 1, (int) WCSAK_Store::get_policy( $this->key_id )->blocked_count );
 	}
 
 	/**

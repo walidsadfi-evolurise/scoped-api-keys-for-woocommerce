@@ -114,7 +114,7 @@ class WCSAK_Store {
 			),
 			$data
 		);
-		$ok = $wpdb->replace( self::policies_table(), $row ); // phpcs:ignore WordPress.DB
+		$ok  = $wpdb->replace( self::policies_table(), $row ); // phpcs:ignore WordPress.DB
 		wp_cache_delete( 'wcsak_policy_' . (int) $key_id, 'wcsak' );
 		return false !== $ok;
 	}
@@ -198,7 +198,15 @@ class WCSAK_Store {
 	public static function usage( array $args ) {
 		global $wpdb;
 		$table  = self::usage_table();
-		$args   = array_merge( array( 'key_id' => 0, 'outcome' => '', 'per_page' => 50, 'page' => 1 ), $args );
+		$args   = array_merge(
+			array(
+				'key_id'   => 0,
+				'outcome'  => '',
+				'per_page' => 50,
+				'page'     => 1,
+			),
+			$args
+		);
 		$where  = array( '1=1' );
 		$params = array();
 		if ( $args['key_id'] ) {
