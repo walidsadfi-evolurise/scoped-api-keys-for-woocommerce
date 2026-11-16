@@ -8,7 +8,7 @@ Stable tag: 1.0.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
-Give each WooCommerce REST API key a scope, an IP allowlist, an expiry date, a rate limit and a usage log. Stop handing out the keys to the whole store.
+Per-key scopes, IP allowlist, expiry, rate limit and usage log for WooCommerce REST API keys. Stop handing out keys to the whole store.
 
 == Description ==
 

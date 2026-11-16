@@ -93,7 +93,7 @@ class WCSAK_Store {
 			return $row ? $row : null;
 		}
 		$table = self::policies_table();
-		$row   = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM {$table} WHERE key_id = %d", (int) $key_id ) ); // phpcs:ignore WordPress.DB
+		$row   = $wpdb->get_row( $wpdb->prepare( 'SELECT * FROM %i WHERE key_id = %d', $table, (int) $key_id ) ); // phpcs:ignore WordPress.DB
 		wp_cache_set( $cache_key, $row ? $row : 0, 'wcsak', 300 );
 		return $row ? $row : null;
 	}
@@ -139,7 +139,7 @@ class WCSAK_Store {
 	public static function record_block( $key_id, $reason ) {
 		global $wpdb;
 		$table = self::policies_table();
-		$wpdb->query( $wpdb->prepare( "UPDATE {$table} SET blocked_count = blocked_count + 1, last_blocked_at = %s, last_blocked_reason = %s WHERE key_id = %d", current_time( 'mysql', true ), $reason, (int) $key_id ) ); // phpcs:ignore WordPress.DB
+		$wpdb->query( $wpdb->prepare( 'UPDATE %i SET blocked_count = blocked_count + 1, last_blocked_at = %s, last_blocked_reason = %s WHERE key_id = %d', $table, current_time( 'mysql', true ), $reason, (int) $key_id ) ); // phpcs:ignore WordPress.DB
 		wp_cache_delete( 'wcsak_policy_' . (int) $key_id, 'wcsak' );
 	}
 
@@ -152,7 +152,7 @@ class WCSAK_Store {
 		global $wpdb;
 		$keys     = $wpdb->prefix . 'woocommerce_api_keys';
 		$policies = self::policies_table();
-		return (array) $wpdb->get_results( "SELECT k.key_id, k.user_id, k.description, k.permissions, k.truncated_key, k.last_access, p.enabled, p.scopes, p.ip_allowlist, p.expires_at, p.rate_limit, p.log_usage, p.note, p.blocked_count, p.last_blocked_at, p.last_blocked_reason FROM {$keys} k LEFT JOIN {$policies} p ON p.key_id = k.key_id ORDER BY k.key_id DESC" ); // phpcs:ignore WordPress.DB
+		return (array) $wpdb->get_results( $wpdb->prepare( 'SELECT k.key_id, k.user_id, k.description, k.permissions, k.truncated_key, k.last_access, p.enabled, p.scopes, p.ip_allowlist, p.expires_at, p.rate_limit, p.log_usage, p.note, p.blocked_count, p.last_blocked_at, p.last_blocked_reason FROM %i k LEFT JOIN %i p ON p.key_id = k.key_id ORDER BY k.key_id DESC', $keys, $policies ) ); // phpcs:ignore WordPress.DB
 	}
 
 	/**
@@ -164,7 +164,7 @@ class WCSAK_Store {
 	public static function wc_key( $key_id ) {
 		global $wpdb;
 		$keys = $wpdb->prefix . 'woocommerce_api_keys';
-		return $wpdb->get_row( $wpdb->prepare( "SELECT key_id, user_id, description, permissions, truncated_key, last_access FROM {$keys} WHERE key_id = %d", (int) $key_id ) ); // phpcs:ignore WordPress.DB
+		return $wpdb->get_row( $wpdb->prepare( 'SELECT key_id, user_id, description, permissions, truncated_key, last_access FROM %i WHERE key_id = %d', $keys, (int) $key_id ) ); // phpcs:ignore WordPress.DB
 	}
 
 	/**
@@ -176,7 +176,7 @@ class WCSAK_Store {
 	public static function key_by_consumer_key( $consumer_key ) {
 		global $wpdb;
 		$keys = $wpdb->prefix . 'woocommerce_api_keys';
-		return $wpdb->get_row( $wpdb->prepare( "SELECT key_id, user_id, permissions FROM {$keys} WHERE consumer_key = %s", wc_api_hash( sanitize_text_field( $consumer_key ) ) ) ); // phpcs:ignore WordPress.DB
+		return $wpdb->get_row( $wpdb->prepare( 'SELECT key_id, user_id, permissions FROM %i WHERE consumer_key = %s', $keys, wc_api_hash( sanitize_text_field( $consumer_key ) ) ) ); // phpcs:ignore WordPress.DB
 	}
 
 	/**
@@ -197,8 +197,8 @@ class WCSAK_Store {
 	 */
 	public static function usage( array $args ) {
 		global $wpdb;
-		$table  = self::usage_table();
-		$args   = array_merge(
+		$table   = self::usage_table();
+		$args    = array_merge(
 			array(
 				'key_id'   => 0,
 				'outcome'  => '',
@@ -207,22 +207,34 @@ class WCSAK_Store {
 			),
 			$args
 		);
-		$where  = array( '1=1' );
-		$params = array();
-		if ( $args['key_id'] ) {
-			$where[]  = 'key_id = %d';
-			$params[] = (int) $args['key_id'];
-		}
-		if ( '' !== $args['outcome'] ) {
-			$where[]  = 'outcome = %s';
-			$params[] = $args['outcome'];
-		}
-		$where_sql = implode( ' AND ', $where );
-		$limit     = max( 1, (int) $args['per_page'] );
-		$offset    = max( 0, ( (int) $args['page'] - 1 ) * $limit );
-		// phpcs:disable WordPress.DB
-		$total = $params ? (int) $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM {$table} WHERE {$where_sql}", $params ) ) : (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$table} WHERE {$where_sql}" );
-		$items = $wpdb->get_results( $wpdb->prepare( "SELECT * FROM {$table} WHERE {$where_sql} ORDER BY id DESC LIMIT %d OFFSET %d", array_merge( $params, array( $limit, $offset ) ) ) );
+		$key_id  = (int) $args['key_id'];
+		$outcome = (string) $args['outcome'];
+		$limit   = max( 1, (int) $args['per_page'] );
+		$offset  = max( 0, ( (int) $args['page'] - 1 ) * $limit );
+		// Both filters are always present and switched off by their empty value, so the SQL text is fixed.
+		// phpcs:disable WordPress.DB.DirectDatabaseQuery
+		$total = (int) $wpdb->get_var(
+			$wpdb->prepare(
+				"SELECT COUNT(*) FROM %i WHERE ( %d = 0 OR key_id = %d ) AND ( %s = '' OR outcome = %s )",
+				$table,
+				$key_id,
+				$key_id,
+				$outcome,
+				$outcome
+			)
+		);
+		$items = $wpdb->get_results(
+			$wpdb->prepare(
+				"SELECT * FROM %i WHERE ( %d = 0 OR key_id = %d ) AND ( %s = '' OR outcome = %s ) ORDER BY id DESC LIMIT %d OFFSET %d",
+				$table,
+				$key_id,
+				$key_id,
+				$outcome,
+				$outcome,
+				$limit,
+				$offset
+			)
+		);
 		// phpcs:enable
 		return array(
 			'items' => $items ? $items : array(),
@@ -254,6 +266,6 @@ class WCSAK_Store {
 		global $wpdb;
 		$table  = self::usage_table();
 		$before = gmdate( 'Y-m-d H:i:s', time() - max( 1, (int) $days ) * DAY_IN_SECONDS );
-		return (int) $wpdb->query( $wpdb->prepare( "DELETE FROM {$table} WHERE created_at < %s", $before ) ); // phpcs:ignore WordPress.DB
+		return (int) $wpdb->query( $wpdb->prepare( 'DELETE FROM %i WHERE created_at < %s', $table, $before ) ); // phpcs:ignore WordPress.DB
 	}
 }

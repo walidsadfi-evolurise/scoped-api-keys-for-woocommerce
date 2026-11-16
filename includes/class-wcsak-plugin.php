@@ -42,8 +42,6 @@ class WCSAK_Plugin {
 			return;
 		}
 
-		load_plugin_textdomain( 'scoped-api-keys-for-woocommerce', false, dirname( plugin_basename( WCSAK_FILE ) ) . '/languages' );
-
 		if ( get_option( 'wcsak_db_version' ) !== WCSAK_VERSION ) {
 			WCSAK_Store::install();
 		}
