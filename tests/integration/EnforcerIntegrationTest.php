@@ -65,6 +65,8 @@ class EnforcerIntegrationTest extends WP_UnitTestCase {
 		$_SERVER['PHP_AUTH_USER'] = $this->ck;
 		$_SERVER['PHP_AUTH_PW']   = $this->cs;
 		wp_set_current_user( 0 );
+		// A real wp-json request defines REST_REQUEST; WooCommerce (since 11.x) only authenticates API keys when wp_is_rest_endpoint() is true.
+		add_filter( 'wp_is_rest_endpoint', '__return_true' );
 		// Force a fresh REST server so our filters and WooCommerce's run on each request.
 		$GLOBALS['wp_rest_server'] = null; // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited
 	}
@@ -74,6 +76,7 @@ class EnforcerIntegrationTest extends WP_UnitTestCase {
 	 */
 	public function tear_down() {
 		unset( $_SERVER['PHP_AUTH_USER'], $_SERVER['PHP_AUTH_PW'], $_SERVER['HTTPS'] );
+		remove_filter( 'wp_is_rest_endpoint', '__return_true' );
 		parent::tear_down();
 	}
 
